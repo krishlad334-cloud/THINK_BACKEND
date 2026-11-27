@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
+    mobile: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],
@@ -30,6 +36,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: USER_ROLES,
       default: 'user',
+    },
+    avatar: {
+      type: String,
+      trim: true,
+      default: '',
     },
     headline: {
       type: String,
@@ -43,13 +54,30 @@ const userSchema = new mongoose.Schema(
       maxlength: 500,
       default: '',
     },
+    hourlyRate: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     skills: {
       type: [String],
       default: [],
     },
+    services: {
+      type: [String],
+      default: [],
+    },
+    isVerified: {
+      type: Boolean,
+      default: true,
+    },
     assessmentPassed: {
       type: Boolean,
       default: false,
+    },
+    assessmentScore: {
+      type: String,
+      default: '',
     },
   },
   {

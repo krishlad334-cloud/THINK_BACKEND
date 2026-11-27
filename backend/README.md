@@ -65,7 +65,7 @@ Copy `.env.example` to `.env` inside `backend/` (already configured for local Mo
 | `MONGO_URI` | Local MongoDB or MongoDB Atlas connection URI | `mongodb://127.0.0.1:27017/overthink` |
 | `JWT_SECRET` | Secret key used to sign/verify JWT tokens | `long_random_64_char_string` |
 | `JWT_EXPIRES_IN` | Token expiration window | `7d` |
-| `CLIENT_URL` | Comma-separated allowed CORS origins | `https://thinkhere.vercel.app,http://localhost:5500,http://127.0.0.1:5500` |
+| `CLIENT_URL` | Comma-separated allowed CORS origins | `https://thinkhere.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500` |
 | `EMAIL_HOST` | SMTP host for reply notifications (optional) | `smtp.gmail.com` |
 | `EMAIL_PORT` | SMTP port | `587` |
 | `EMAIL_SECURE` | `true` for port 465, otherwise `false` | `false` |
@@ -164,13 +164,14 @@ Response (`201 Created`):
 }
 ```
 
-- **`POST /api/auth/login`** — Authenticate and receive a JWT token (`200 OK`).
+- **`POST /api/auth/login`** — Authenticate with `email` or `mobile`/`identifier` + `password` and receive a JWT token (`200 OK`).
 - **`GET /api/auth/me`** — Protected (`Authorization: Bearer <token>`), returns current user (`200 OK`).
-- **`PATCH /api/auth/me`** — Protected, updates profile fields (`name`, `headline`, `bio`, `skills`, `assessmentPassed`).
+- **`PATCH /api/auth/me`** — Protected, updates profile & consultant qualification fields (`name`, `mobile`, `avatar`, `headline`, `bio`, `hourlyRate`, `skills`, `services`, `assessmentPassed`, `assessmentScore`, `isVerified`).
+- **`GET /api/auth/consultants`** — Public consultant directory profiles.
 
 ### Thoughts
 
-- **`POST /api/thoughts`** — Public (rate limited; links `user` automatically if Bearer token is sent). Accepts `name`, `email`, `category` (`business` | `career` | `personal` | `other`), `message` (max 3000 chars), `solverType` (`human` | `ai`), plus optional `title`, `description`, `urgency`.
+- **`POST /api/thoughts`** — Public (rate limited; links `user` automatically if Bearer token is sent). Accepts `name`, `email`, `category` (`business` | `career` | `personal` | `other`), `message` (max 3000 chars), `solverType` (`human` | `ai`), plus optional `title`, `description`, `urgency`, `attachments`. Creates a consultant notification automatically.
 
 Request:
 ```json
@@ -186,7 +187,19 @@ Request:
 - **`GET /api/thoughts/my`** — Protected, lists thoughts belonging to the signed-in user along with replies.
 - **`GET /api/thoughts`** — Consultant/Admin only (`restrictTo('consultant', 'admin')`). Supports `?page=1&limit=10&status=pending&category=business&solverType=human&q=keyword`.
 - **`GET /api/thoughts/:id`** — Returns a single thought with its replies (masks submitter email for unauthenticated callers).
-- **`PATCH /api/thoughts/:id/status`** — Consultant/Admin only. Updates status (`pending`, `accepted`, `in_progress`, `answered`, `resolved`, `closed`).
+- **`POST /api/thoughts/:id/accept`** — Consultant/Admin only. Claims a pending thought (`status: "accepted"`), opens a 1-on-1 `Conversation` with the initial problem message, and notifies the client.
+- **`PATCH /api/thoughts/:id/status`** — Consultant/Admin only. Updates status (`pending`, `pending_human`, `accepted`, `in_progress`, `answered`, `resolved`, `ai_fallback`, `closed`) plus optional `solution`, `aiResponse`, `aiDiagnosticPlan`, and syncs linked conversation status.
+
+### Conversations & Notifications (React Frontend Support)
+
+- **`GET /api/conversations`** — Protected, returns 1-on-1 consultation rooms for the signed-in client or consultant.
+- **`POST /api/conversations/:id/messages`** — Protected, appends a message and notifies the other participant.
+- **`PATCH /api/conversations/:id/read`** — Protected, marks incoming messages as read.
+- **`DELETE /api/conversations/:id/messages/:messageId`** — Protected, deletes a user-authored chat message.
+- **`GET /api/notifications`** — Protected, fetches notifications for the signed-in user and role.
+- **`PATCH /api/notifications/:id/read`** / **`PATCH /api/notifications/read-all`** — Protected, marks notification(s) as read.
+
+> See `backend/docs/react-api-adapter.js` for a drop-in ES module client (`overthinkApi`) ready for your Vite React app (`http://localhost:5173`).
 
 ### Replies
 

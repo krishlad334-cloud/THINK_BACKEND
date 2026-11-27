@@ -2,8 +2,27 @@ const mongoose = require('mongoose');
 
 const THOUGHT_CATEGORIES = ['business', 'career', 'personal', 'other'];
 const SOLVER_TYPES = ['human', 'ai'];
-const THOUGHT_STATUSES = ['pending', 'accepted', 'in_progress', 'answered', 'resolved', 'closed'];
+const THOUGHT_STATUSES = [
+  'pending',
+  'pending_human',
+  'accepted',
+  'in_progress',
+  'answered',
+  'resolved',
+  'ai_fallback',
+  'closed',
+];
 const URGENCY_LEVELS = ['Standard', 'Priority', 'Urgent'];
+
+const attachmentSchema = new mongoose.Schema(
+  {
+    name: { type: String, trim: true },
+    size: { type: String, trim: true },
+    type: { type: String, trim: true },
+    url: { type: String, trim: true },
+  },
+  { _id: false }
+);
 
 const thoughtSchema = new mongoose.Schema(
   {
@@ -25,7 +44,6 @@ const thoughtSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
-    // Optional title & description fields for compatibility with the live OverThink React UI
     title: {
       type: String,
       trim: true,
@@ -76,6 +94,23 @@ const thoughtSchema = new mongoose.Schema(
       default: null,
     },
     tags: {
+      type: [String],
+      default: [],
+    },
+    attachments: {
+      type: [attachmentSchema],
+      default: [],
+    },
+    solution: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    aiResponse: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    aiDiagnosticPlan: {
       type: [String],
       default: [],
     },

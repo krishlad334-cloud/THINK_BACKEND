@@ -4,6 +4,7 @@ const {
   getThoughts,
   getMyThoughts,
   getThoughtById,
+  acceptThought,
   updateThoughtStatus,
 } = require('../controllers/thoughtController');
 const { protect, optionalProtect, restrictTo } = require('../middleware/auth');
@@ -28,6 +29,9 @@ router.get('/', protect, restrictTo('consultant', 'admin'), listThoughtsRules, g
 
 // Fetch single thought + replies
 router.get('/:id', optionalProtect, mongoIdParamRule('id'), getThoughtById);
+
+// Consultant/Admin claims a thought and starts a 1-on-1 conversation
+router.post('/:id/accept', protect, restrictTo('consultant', 'admin'), mongoIdParamRule('id'), acceptThought);
 
 // Consultant/Admin status update
 router.patch('/:id/status', protect, restrictTo('consultant', 'admin'), updateStatusRules, updateThoughtStatus);

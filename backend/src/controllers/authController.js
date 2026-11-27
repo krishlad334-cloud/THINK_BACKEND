@@ -11,34 +11,50 @@ const signToken = (userId) => {
 
 /**
  * POST /api/auth/register
- * Register a new user, client, or consultant account.
+ * Register a new user, client, or consultant account (supports optional mobile number).
  */
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, role, headline, bio, skills } = req.body;
+    const { name, email, mobile, password, role, headline, bio, skills, services, avatar } = req.body;
 
-    // Never allow privilege escalation via public registration
     if (role === 'admin') {
       return next(new AppError('Admin accounts cannot be created through public registration.', 403));
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase();
+    const cleanMobile = mobile ? String(mobile).replace(/\D/g, '') : undefined;
+
+    const duplicateQuery = cleanMobile
+      ? { $or: [{ email: normalizedEmail }, { mobile: cleanMobile }] }
+      : { email: normalizedEmail };
+
+    const existingUser = await User.findOne(duplicateQuery);
     if (existingUser) {
-      return next(new AppError('An account with this email already exists.', 409));
+      const conflictField = existingUser.email === normalizedEmail ? 'email' : 'mobile number';
+      return next(new AppError(`An account with this ${conflictField} already exists.`, 409));
     }
 
     const assignedRole = ['user', 'client', 'consultant'].includes(role) ? role : 'user';
 
-    const user = await User.create({
+    const userPayload = {
       name,
-      email,
+      email: normalizedEmail,
       password,
       role: assignedRole,
+      avatar: avatar || '',
       headline: headline || '',
       bio: bio || '',
       skills: Array.isArray(skills) ? skills : [],
-    });
+      services: Array.isArray(services) ? services : [],
+      isVerified: assignedRole !== 'consultant',
+      assessmentPassed: assignedRole !== 'consultant',
+    };
 
+    if (cleanMobile) {
+      userPayload.mobile = cleanMobile;
+    }
+
+    const user = await User.create(userPayload);
     const token = signToken(user._id);
 
     return sendResponse(res, 201, 'Account registered successfully.', {
@@ -52,15 +68,24 @@ const register = async (req, res, next) => {
 
 /**
  * POST /api/auth/login
- * Authenticate an existing user and return a JWT token.
+ * Authenticate with email or mobile number and return a JWT token.
  */
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const rawIdentifier = String(req.body.identifier || req.body.email || req.body.mobile || '').trim();
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    let query;
+    if (rawIdentifier.includes('@')) {
+      query = { email: rawIdentifier.toLowerCase() };
+    } else {
+      const digits = rawIdentifier.replace(/\D/g, '');
+      query = digits ? { mobile: digits } : { email: rawIdentifier.toLowerCase() };
+    }
+
+    const user = await User.findOne(query).select('+password');
     if (!user || !(await user.comparePassword(password))) {
-      return next(new AppError('Invalid email or password.', 401));
+      return next(new AppError('Invalid credentials. Please check your email/mobile and password.', 401));
     }
 
     const token = signToken(user._id);
@@ -90,16 +115,31 @@ const getMe = async (req, res, next) => {
 
 /**
  * PATCH /api/auth/me
- * Update allowed profile fields for the authenticated user.
+ * Update allowed profile and consultant qualification fields for the authenticated user.
  */
 const updateMe = async (req, res, next) => {
   try {
-    const allowedFields = ['name', 'headline', 'bio', 'skills', 'assessmentPassed'];
+    const allowedFields = [
+      'name',
+      'mobile',
+      'avatar',
+      'headline',
+      'bio',
+      'hourlyRate',
+      'skills',
+      'services',
+      'assessmentPassed',
+      'assessmentScore',
+      'isVerified',
+    ];
     const updates = {};
 
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+        updates[field] =
+          field === 'mobile' && req.body.mobile
+            ? String(req.body.mobile).replace(/\D/g, '')
+            : req.body[field];
       }
     }
 
@@ -116,9 +156,28 @@ const updateMe = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/auth/consultants
+ * List public consultant directory profiles (without email/mobile PII unless needed).
+ */
+const getConsultants = async (_req, res, next) => {
+  try {
+    const consultants = await User.find({ role: 'consultant' })
+      .select('name avatar headline bio hourlyRate skills services isVerified assessmentPassed createdAt')
+      .sort({ isVerified: -1, createdAt: -1 });
+
+    return sendResponse(res, 200, 'Consultants fetched successfully.', {
+      consultants,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   updateMe,
+  getConsultants,
 };

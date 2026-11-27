@@ -8,6 +8,8 @@ const authRoutes = require('./routes/authRoutes');
 const thoughtRoutes = require('./routes/thoughtRoutes');
 const replyRoutes = require('./routes/replyRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { apiLimiter } = require('./middleware/rateLimiters');
 const { AppError, notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { sendResponse } = require('./utils/response');
@@ -16,7 +18,9 @@ const app = express();
 
 // Parse allowed origins strictly from CLIENT_URL environment variable
 const parseAllowedOrigins = () => {
-  const raw = process.env.CLIENT_URL || 'https://thinkhere.vercel.app,http://localhost:5500,http://127.0.0.1:5500';
+  const raw =
+    process.env.CLIENT_URL ||
+    'https://thinkhere.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500';
   return raw
     .split(',')
     .map((origin) => origin.trim().replace(/\/+$/, ''))
@@ -78,6 +82,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/thoughts', thoughtRoutes);
 app.use('/api/replies', replyRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 & centralized JSON error handler
 app.use(notFoundHandler);

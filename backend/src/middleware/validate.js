@@ -46,6 +46,11 @@ const registerRules = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
+  body('mobile')
+    .optional({ values: 'falsy' })
+    .customSanitizer((val) => String(val).replace(/\D/g, ''))
+    .isLength({ min: 10, max: 15 })
+    .withMessage('Mobile number must be between 10 and 15 digits'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -61,13 +66,14 @@ const registerRules = [
 ];
 
 const loginRules = [
-  body('email')
-    .trim()
-    .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+  body('identifier')
+    .custom((value, { req }) => {
+      const raw = String(value || req.body.email || req.body.mobile || '').trim();
+      if (!raw) {
+        throw new Error('Email or mobile number is required');
+      }
+      return true;
+    }),
   body('password')
     .notEmpty()
     .withMessage('Password is required'),
@@ -75,7 +81,6 @@ const loginRules = [
 ];
 
 const createThoughtRules = [
-  // Allow authenticated users to omit name/email; controller fills from req.user
   body('name')
     .if((_val, { req }) => !req.user || req.body.name !== undefined)
     .trim()
@@ -134,6 +139,10 @@ const createThoughtRules = [
     .trim()
     .isIn(URGENCY_LEVELS)
     .withMessage(`Urgency must be one of: ${URGENCY_LEVELS.join(', ')}`),
+  body('attachments')
+    .optional()
+    .isArray()
+    .withMessage('attachments must be an array'),
   handleValidation,
 ];
 
@@ -215,6 +224,27 @@ const createReplyRules = [
   handleValidation,
 ];
 
+const sendMessageRules = [
+  param('id').isMongoId().withMessage('Invalid conversation ID format'),
+  body('text')
+    .custom((value, { req }) => {
+      const hasText = typeof value === 'string' && value.trim().length > 0;
+      const hasAttachments = Array.isArray(req.body.attachments) && req.body.attachments.length > 0;
+      if (!hasText && !hasAttachments) {
+        throw new Error('Message text or attachment is required');
+      }
+      if (typeof value === 'string' && value.length > 4000) {
+        throw new Error('Message cannot exceed 4000 characters');
+      }
+      return true;
+    }),
+  body('attachments')
+    .optional()
+    .isArray()
+    .withMessage('attachments must be an array'),
+  handleValidation,
+];
+
 const newsletterRules = [
   body('email')
     .trim()
@@ -239,5 +269,6 @@ module.exports = {
   mongoIdParamRule,
   updateStatusRules,
   createReplyRules,
+  sendMessageRules,
   newsletterRules,
 };
