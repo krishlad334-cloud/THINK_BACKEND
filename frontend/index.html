@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OverThink — Every Thought Deserves a Solution</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="container navbar-inner">
+        <a href="./index.html" class="brand">
+          <span class="brand-mark">OT</span>
+          <span>OverThink</span>
+        </a>
+
+        <div class="nav-actions">
+          <span id="healthBadge" class="status-pill">
+            <span id="healthDot" class="dot"></span>
+            <span id="healthText">Checking API...</span>
+          </span>
+
+          <span id="userBadge" class="status-pill hidden"></span>
+          <button id="logoutBtn" type="button" class="btn btn-secondary btn-sm hidden">Sign Out</button>
+          <a href="./admin.html" class="btn btn-secondary btn-sm">Consultant / Admin</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <span class="hero-badge">Human Consultants &amp; AI Solutions Within 24 Hours</span>
+        <h1>
+          Every Thought Deserves a <span class="gradient-text">Clear Solution</span>
+        </h1>
+        <p>
+          Share a business challenge, career decision, or personal dilemma. Choose human consultant guidance or AI analysis and track your response anytime.
+        </p>
+      </section>
+
+      <section class="main-grid">
+        <!-- Left column: Thought submission form -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Share Your Thought</h2>
+            <span class="muted">24h turnaround</span>
+          </div>
+          <p class="card-subtitle">
+            Submit without an account or sign in on the right to save thoughts to your personal dashboard.
+          </p>
+
+          <div id="thoughtAlert" class="alert" role="status"></div>
+
+          <form id="thoughtForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="thoughtName">Your Name</label>
+                <input id="thoughtName" name="name" type="text" placeholder="Alex Rivera" required maxlength="100" />
+              </div>
+              <div class="field">
+                <label for="thoughtEmail">Email Address</label>
+                <input id="thoughtEmail" name="email" type="email" placeholder="alex@example.com" required />
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="thoughtCategory">Category</label>
+                <select id="thoughtCategory" name="category" required>
+                  <option value="business">Business</option>
+                  <option value="career">Career</option>
+                  <option value="personal">Personal</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="thoughtTitle">Short Title (Optional)</label>
+                <input id="thoughtTitle" name="title" type="text" placeholder="e.g., Pricing model for B2B launch" maxlength="200" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Preferred Solver</label>
+              <div class="solver-toggle">
+                <label class="solver-option">
+                  <input type="radio" name="solverType" value="human" checked />
+                  <span class="solver-label">Human Consultant</span>
+                </label>
+                <label class="solver-option">
+                  <input type="radio" name="solverType" value="ai" />
+                  <span class="solver-label">AI Solution</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="thoughtMessage">Your Thought, Question, or Challenge</label>
+              <textarea
+                id="thoughtMessage"
+                name="message"
+                placeholder="Describe what you're thinking through, key constraints, and what kind of clarity you want..."
+                maxlength="3000"
+                required
+              ></textarea>
+              <div class="field-meta">
+                <span>Protected &amp; confidential</span>
+                <span id="charCount">0 / 3000</span>
+              </div>
+            </div>
+
+            <button id="thoughtSubmitBtn" type="submit" class="btn btn-primary" style="width: 100%;">
+              Submit Thought
+            </button>
+          </form>
+        </div>
+
+        <!-- Right column: Auth + Tracking / My Thoughts -->
+        <div class="stack">
+          <div id="authCard" class="card">
+            <h2 class="card-title">Account Access</h2>
+            <p class="card-subtitle">Sign in or create an account to keep all your thoughts and replies in one place.</p>
+
+            <div class="tab-bar">
+              <button type="button" class="tab-btn active" data-auth-mode="login">Sign In</button>
+              <button type="button" class="tab-btn" data-auth-mode="register">Create Account</button>
+            </div>
+
+            <div id="authAlert" class="alert" role="status"></div>
+
+            <form id="authForm">
+              <div id="registerFields" class="hidden">
+                <div class="field">
+                  <label for="authName">Full Name</label>
+                  <input id="authName" name="name" type="text" placeholder="Jordan Lee" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="authRole">Account Type</label>
+                  <select id="authRole" name="role">
+                    <option value="user">Thinker / Client</option>
+                    <option value="consultant">Consultant</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="authEmail">Email</label>
+                <input id="authEmail" name="email" type="email" placeholder="you@example.com" required />
+              </div>
+
+              <div class="field">
+                <label for="authPassword">Password</label>
+                <input id="authPassword" name="password" type="password" placeholder="Min. 6 characters" minlength="6" required />
+              </div>
+
+              <button id="authSubmitBtn" type="submit" class="btn btn-primary" style="width: 100%;">
+                Sign In
+              </button>
+            </form>
+          </div>
+
+          <!-- Lookup by ID card -->
+          <div class="card">
+            <h2 class="card-title">Track a Thought by ID</h2>
+            <p class="card-subtitle">Paste any submitted Thought ID to check its status and solution reply.</p>
+
+            <div id="trackAlert" class="alert" role="status"></div>
+
+            <form id="trackForm" class="field">
+              <div class="inline-row">
+                <input id="trackIdInput" type="text" placeholder="Paste 24-character Thought ID..." required />
+                <button id="trackSubmitBtn" type="submit" class="btn btn-secondary">Check</button>
+              </div>
+            </form>
+
+            <div id="trackedThoughtResult" class="stack"></div>
+          </div>
+
+          <!-- Signed-in user's thoughts -->
+          <div id="myThoughtsCard" class="card hidden">
+            <div class="card-header">
+              <h2 class="card-title">My Submitted Thoughts</h2>
+              <button id="refreshMyThoughtsBtn" type="button" class="btn btn-secondary btn-sm">Refresh</button>
+            </div>
+            <div id="myThoughtsList" class="stack"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <strong class="brand-font">OverThink Digest</strong>
+            <p class="muted">Weekly frameworks for clear thinking &amp; better decisions.</p>
+          </div>
+
+          <div>
+            <div id="newsletterAlert" class="alert" role="status"></div>
+            <form id="newsletterForm" class="newsletter-form">
+              <input id="newsletterEmail" type="email" placeholder="Enter your email for updates..." required />
+              <button id="newsletterSubmitBtn" type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./js/api.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
